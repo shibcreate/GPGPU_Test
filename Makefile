@@ -2,7 +2,7 @@ CC=/usr/local/cuda/bin/nvcc
 ARCH=-arch=sm_52
 SOURCES=main.cu
 OBJECTS=$(SOURCES:.cpp=.o)
-EXECUTABLE=vecadd
+EXECUTABLE=cudaAnalysis
 all: $(SOURCES) $(EXECUTABLE)
     
 $(EXECUTABLE): $(OBJECTS) 
