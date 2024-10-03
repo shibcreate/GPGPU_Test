@@ -2,45 +2,72 @@
 #include <stdlib.h>
 #include "kernel.cu"
 
-int main (int argc, char *argv[]){
-
-    float *A_h, *B_h, *C_h;
-    float *A_d, *B_d, *C_d;    
-    unsigned VecSize;
+int main (int argc, char *argv[]) {
+    float *A_h, *B_h, *C_h;   // Host matrices
+    float *A_d, *B_d, *C_d;   // Device matrices
+    int MatSize;
    
+    // Accept matrix size from the user
     if (argc == 1) {
-        VecSize = 256;
+        MatSize = 16;  // Default size
     } else if (argc == 2) {
-      VecSize = atoi(argv[1]);
+        MatSize = atoi(argv[1]);  // User-specified size
     } else {
-        printf("Usage: ./vecAdd <Size>");
+        printf("Usage: ./matMul <Size>\n");
         exit(0);
     }
-	
-    A_h = (float*) malloc( sizeof(float) * VecSize );
-	B_h = (float*) malloc( sizeof(float) * VecSize );
-	C_h = (float*) malloc( sizeof(float) * VecSize );
-	
-    for (unsigned int i=0; i < VecSize; i++) {
-		A_h[i] = i;
-		B_h[i] = i;
-	}    
+
+    int size = MatSize * MatSize * sizeof(float);
+
+    // Allocate memory on the host
+    A_h = (float*) malloc(size);
+    B_h = (float*) malloc(size);
+    C_h = (float*) malloc(size);
+
+    // Initialize the host matrices
+    for (int i = 0; i < MatSize * MatSize; i++) {
+        A_h[i] = rand() % 100;  // Random values for demo
+        B_h[i] = rand() % 100;
+    }
+
+    // Allocate memory on the device
+    cudaMalloc((void**)&A_d, size);
+    cudaMalloc((void**)&B_d, size);
+    cudaMalloc((void**)&C_d, size);
+
+    // Copy data from host to device
+    cudaMemcpy(A_d, A_h, size, cudaMemcpyHostToDevice);
+    cudaMemcpy(B_d, B_h, size, cudaMemcpyHostToDevice);
+
+    // Define block and grid sizes
+    dim3 threadsPerBlock(16, 16);  // 16x16 threads per block
+    dim3 blocksPerGrid((MatSize + 15) / 16, (MatSize + 15) / 16);
+
+    // Launch the kernel
+    MatMul<<<blocksPerGrid, threadsPerBlock>>>(A_d, B_d, C_d, MatSize);
 
     cudaDeviceSynchronize();
-    
-    //INSERT Memory CODE HERE
 
-    cudaDeviceSynchronize();
+    // Copy the result back to the host
+    cudaMemcpy(C_h, C_d, size, cudaMemcpyDeviceToHost);
 
-    //INSERT kernel launch CODE HERE
+    // Print a small portion of the result matrix for verification
+    for (int i = 0; i < MatSize && i < 4; i++) {
+        for (int j = 0; j < MatSize && j < 4; j++) {
+            printf("%f ", C_h[i * MatSize + j]);
+        }
+        printf("\n");
+    }
 
-    cudaDeviceSynchronize();
+    // Free device memory
+    cudaFree(A_d);
+    cudaFree(B_d);
+    cudaFree(C_d);
 
+    // Free host memory
     free(A_h);
     free(B_h);
     free(C_h);
-
-    //INSERT Memory CODE HERE
 
     return 0;
 }
