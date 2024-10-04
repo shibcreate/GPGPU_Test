@@ -1,5 +1,5 @@
 CC=/usr/local/cuda/bin/nvcc
-ARCH=-arch=sm_52
+ARCH=-arch=sm_20
 SOURCES=main.cu
 OBJECTS=$(SOURCES:.cu=.o)
 EXECUTABLE=matrixMulReg
